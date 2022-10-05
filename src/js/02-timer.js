@@ -11,6 +11,25 @@ const secondsCounter = document.querySelector('[data-seconds]');
 
 // ------------------- STYLES BEGIN -------------------
 
+const labelSpan = document.querySelectorAll('.label');
+
+[...labelSpan].forEach(element => {
+  switch (element.textContent) {
+    case 'Days':
+      element.textContent = 'DAY';
+      break;
+    case 'Hours':
+      element.textContent = 'HRS';
+      break;
+    case 'Minutes':
+      element.textContent = 'MIN';
+      break;
+    case 'Seconds':
+      element.textContent = 'SEC';
+      break;
+  }
+});
+
 const headTitle = document.head.querySelector('title');
 
 headTitle.insertAdjacentHTML(
@@ -99,9 +118,12 @@ button:focus {
 }`);
 
 document.styleSheets[0].insertRule(`button:disabled {
-  background-color: #fafafa;
   cursor: not-allowed;
   color: #cacaca;
+}`);
+
+document.styleSheets[0].insertRule(`button:disabled:hover {
+  background-color: #fafafa;
 }`);
 
 document.styleSheets[0].insertRule(`.progress {
@@ -125,7 +147,6 @@ document.styleSheets[0].insertRule(`.percentage {
   font-family: 'Bebas Neue', cursive;
   font-size: 115px;
   color: #fafafa;
-  mix-blend-mode: difference;
 }`);
 
 document.styleSheets[0].insertRule(`.circle {
@@ -203,54 +224,17 @@ document.styleSheets[0].insertRule(`.obscure {
 
 // -------------------- STYLES END --------------------
 
-const overlay = document.querySelector('.overlay');
-
-const endDiv = document.querySelector('.end');
-
-function populateEnd() {
-  endDiv.textContent = `Time until ${setDate.getDate()}.${
-    setDate.getMonth() + 1
-  }.${setDate.getFullYear()} ${setDate.getHours()}:${setDate.getMinutes()}`;
-}
-
-const labelSpan = document.querySelectorAll('.label');
-
-[...labelSpan].forEach(element => {
-  switch (element.textContent) {
-    case 'Days':
-      element.textContent = 'DAY';
-      break;
-    case 'Hours':
-      element.textContent = 'HRS';
-      break;
-    case 'Minutes':
-      element.textContent = 'MIN';
-      break;
-    case 'Seconds':
-      element.textContent = 'SEC';
-      break;
-  }
-});
-
 const progressCircle = document.querySelector('.circle');
 const progressPercent = document.querySelector('.percentage');
-const progressBar = () => {
-  let nowDate = new Date();
-  let hundredPercent = setDate.getTime() - progressDate.getTime();
-  let currentProgress = setDate.getTime() - nowDate.getTime();
-  let percentCoeficient = (hundredPercent - currentProgress) / hundredPercent;
-  if (percentCoeficient > 1) {
-    percentCoeficient = 1;
-  }
-  let progressDegrees = Math.round(360 * percentCoeficient);
-  let progressNumber = Math.round(percentCoeficient * 100);
-  progressCircle.style.background = `conic-gradient(#fafafa 0deg ${progressDegrees}deg, transparent ${progressDegrees}deg 360deg)`;
-  progressPercent.textContent = `${progressNumber}%`;
-};
+const endDiv = document.querySelector('.end');
+const overlay = document.querySelector('.overlay');
 
 let currentDate = null;
 let setDate = null;
 let progressDate = null;
+
+let timerId1 = null;
+let timerId2 = null;
 
 function convertMs(ms) {
   const second = 1000;
@@ -274,6 +258,26 @@ function addLeadingZero(value) {
   }
 }
 
+function populateEnd() {
+  endDiv.textContent = `Time until ${setDate.getDate()}.${
+    setDate.getMonth() + 1
+  }.${setDate.getFullYear()} ${setDate.getHours()}:${setDate.getMinutes()}`;
+}
+
+const progressBar = () => {
+  let nowDate = new Date();
+  let hundredPercent = setDate.getTime() - progressDate.getTime();
+  let currentProgress = setDate.getTime() - nowDate.getTime();
+  let percentCoeficient = (hundredPercent - currentProgress) / hundredPercent;
+  if (percentCoeficient > 1) {
+    percentCoeficient = 1;
+  }
+  let progressDegrees = Math.round(360 * percentCoeficient);
+  let progressNumber = Math.round(percentCoeficient * 100);
+  progressCircle.style.background = `conic-gradient(#fafafa 0deg ${progressDegrees}deg, transparent ${progressDegrees}deg 360deg)`;
+  progressPercent.textContent = `${progressNumber}%`;
+};
+
 const countDown = () => {
   currentDate = new Date();
   let remainingTime = setDate.getTime() - currentDate.getTime();
@@ -287,6 +291,9 @@ const countDown = () => {
   } else {
     progressCircle.style.background = `conic-gradient(#fafafa 0deg 360deg, transparent 360deg 360deg)`;
     progressPercent.textContent = `100%`;
+    document.body.style.backgroundColor = 'rgb(50, 198, 130)';
+    startCounter.style.border = '2px solid rgb(50, 198, 130)';
+    counterInput.style.border = '2px solid rgb(50, 198, 130)';
     Notiflix.Notify.success('The countdown has completed!');
     clearInterval(timerId1);
     clearInterval(timerId2);
@@ -309,12 +316,9 @@ const options = {
   },
 };
 
-startCounter.disabled = true;
-
 flatpickr('#datetime-picker', options);
 
-let timerId1 = null;
-let timerId2 = null;
+startCounter.disabled = true;
 
 startCounter.addEventListener('click', () => {
   progressDate = new Date();
