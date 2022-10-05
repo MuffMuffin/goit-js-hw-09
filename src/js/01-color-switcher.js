@@ -31,8 +31,12 @@ bodyArea.style.width = '100vw';
 
 document.styleSheets[0].insertRule(
   `button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 100px;
   height: 50px;
+  transform: translate(-50%, -50%);
   border: none;
   border-radius: 6px;
   font-size: 20px;
@@ -43,14 +47,7 @@ document.styleSheets[0].insertRule(
 );
 
 document.styleSheets[0].insertRule(`button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}`);
-
-document.styleSheets[0].insertRule(`button:first-of-type {
-  display: inline-block;
-  margin-top: 40vh;
-  margin-left: calc(50vw - 100px);
+  display: none;
 }`);
 
 document.styleSheets[0].insertRule(`.fader {
