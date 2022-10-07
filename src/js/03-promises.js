@@ -46,6 +46,10 @@ label[label.length - 1].insertAdjacentHTML(
 
 formArea.insertAdjacentHTML('afterend', `<div class="fancy"></div>`);
 
+[...inputFields].forEach(element => {
+  element.setAttribute('min', 1);
+});
+
 // POPULATING STYLES:
 
 document.body.style.cssText = `overflow: hidden; width: 100vw; height: 100vh; background: radial-gradient(transparent, #e9e9e9);`;
@@ -199,7 +203,7 @@ document.styleSheets[0].insertRule(`.progress {
   position: absolute;
   top: 280px;
   left: 50%;
-  width: 135px;
+  width: 130px;
   height: 30px;
   transform: translate(-50%, 0);
   display: flex;
@@ -208,7 +212,7 @@ document.styleSheets[0].insertRule(`.progress {
 }`);
 
 document.styleSheets[0].insertRule(`.generator {
-  width: 105px;
+  width: 100px;
 }`);
 
 document.styleSheets[0].insertRule(`.spiner {
@@ -280,8 +284,8 @@ const progressBar = {
   progress: document.querySelector('.progress'),
   generator: document.querySelector('.generator'),
   spiner: document.querySelector('.spiner'),
-  generatorTimer: null,
-  spinerTimer: null,
+  generatorTimer: undefined,
+  spinerTimer: undefined,
   genStepVar: 1,
   spinStepVar: 1,
 
@@ -289,19 +293,19 @@ const progressBar = {
     this.generatorTimer = setInterval(() => {
       switch (this.genStepVar) {
         case 1:
-          this.generator.textContent = 'Generating';
+          this.generator.textContent = 'Resolving';
           this.genStepVar += 1;
           break;
         case 2:
-          this.generator.textContent = 'Generating.';
+          this.generator.textContent = 'Resolving.';
           this.genStepVar += 1;
           break;
         case 3:
-          this.generator.textContent = 'Generating..';
+          this.generator.textContent = 'Resolving..';
           this.genStepVar += 1;
           break;
         case 4:
-          this.generator.textContent = 'Generating...';
+          this.generator.textContent = 'Resolving...';
           this.genStepVar = 1;
           break;
       }
@@ -330,32 +334,91 @@ const progressBar = {
 
   done() {
     clearInterval(this.generatorTimer);
+    this.generatorTimer = undefined;
     clearInterval(this.spinerTimer);
+    this.spinerTimer = undefined;
     this.progress.innerHTML = `<div class="done">Done!</div>`;
     setTimeout(() => {
       this.progress.innerHTML = `<div class="generator"></div>
         <div class="spiner"></div>`;
+      this.generator = document.querySelector('.generator');
+      this.spiner = document.querySelector('.spiner');
     }, 2000);
   },
 };
 
 // -------------------- STYLES END --------------------
 
+let promiseDelay = null;
+let promiseStep = null;
+let promiseAmount = null;
+let promiseElapsed = null;
+
 function createPromise(position, delay) {
-  const shouldResolve = Math.random() > 0.3;
-  if (shouldResolve) {
-    // Fulfill
-  } else {
-    // Reject
-  }
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      promiseElapsed = delay;
+      const shouldResolve = Math.random() > 0.3;
+      if (shouldResolve) {
+        resolve(position);
+      } else {
+        reject(position);
+      }
+    }, delay);
+  });
 }
+
+const formManipulate = {
+  block() {
+    submitButton.disabled = true;
+    [...inputFields].forEach(element => {
+      element.disabled = true;
+    });
+  },
+
+  reset() {
+    formArea.reset();
+    submitButton.disabled = false;
+    [...inputFields].forEach(element => {
+      element.disabled = false;
+    });
+  },
+};
 
 formArea.addEventListener('submit', event => {
   event.preventDefault();
+  promiseDelay = parseInt(event.currentTarget.elements[0].value);
+  promiseStep = parseInt(event.currentTarget.elements[1].value);
+  promiseAmount = parseInt(event.currentTarget.elements[2].value);
+
   progressBar.start();
-  submitButton.disabled = true;
-  [...inputFields].forEach(element => {
-    element.disabled = true;
-  });
-  console.log(event);
+  formManipulate.block();
+
+  for (let i = 0; i < promiseAmount; i += 1) {
+    createPromise(i + 1, promiseDelay + promiseStep * i)
+      .then(value => {
+        Notiflix.Notify.success(
+          `Promise No.${value} was fulfilled at ${promiseElapsed}ms.`,
+          {
+            timeout: 5000,
+          }
+        );
+        if (value === promiseAmount) {
+          progressBar.done();
+          formManipulate.reset();
+        }
+      })
+      .catch(value => {
+        Notiflix.Notify.failure(
+          `Promise No.${value} was rejected at ${promiseElapsed}ms.`,
+          {
+            timeout: 5000,
+          }
+        );
+        if (value === promiseAmount) {
+          progressBar.done();
+          formManipulate.reset();
+        }
+      });
+  }
 });
